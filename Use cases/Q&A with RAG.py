@@ -31,12 +31,13 @@ ollama_embeddings = OllamaEmbeddings(base_url="http://localhost:11434", model="n
 
 # store
 # 创建一个chroma的数据库实例，并且配置一个地址
-vectorstore = Chroma.from_documents(documents=splits, embedding=ollama_embeddings, persist_directory="./chroma_db")
+# vectorstore = Chroma.from_documents(documents=splits, embedding=ollama_embeddings, persist_directory="./chroma_db")
+vectorstore = Chroma(persist_directory="../chroma_db", embedding_function=ollama_embeddings)
 
 # Retrieve and generate using the relevant snippets of the blog.
 retriever = vectorstore.as_retriever()
 prompt = hub.pull("rlm/rag-prompt")
-llm = Ollama(base_url="http://localhost:11434", model="qwen:4b", temperature=0.5)
+llm = Ollama(base_url="http://localhost:11434", model="qwen:7b", temperature=0.5)
 
 
 def format_docs(docs):
@@ -52,3 +53,22 @@ rag_chain = (
 
 for chunk in rag_chain.stream("What is Task Decomposition?"):
     print(chunk, end="", flush=True)
+
+"""
+qwen:4b:
+I'm sorry, but I don't know what Task Decomposition is. Can you please provide more context or information about Task Decomposition?
+qwen:7b:
+Task Decomposition involves breaking down a complex task into smaller, manageable steps. This process helps an agent or system plan ahead and execute tasks more efficiently.
+
+For example, if a user asks to book a flight, this complex task can be decomposed as follows:
+
+1. Gather user input: Collect information about the flight such as departure city, destination city, travel dates, and preferred airline.
+
+2. Search for available flights: Use the gathered information to search for flights that match the user's criteria.
+
+3. Filter results: Apply filters to the search results based on factors like price, seat availability, layovers, and time of day.
+
+4. Present flight options: Display a list of flight options to the user, including details such as flight number, departure/arrival times, and prices.
+
+5. Assist with booking: If the user selects a flight and proceeds with the booking process, assist them by guiding through payment steps and providing any additional information or support needed.
+"""
