@@ -4,7 +4,7 @@ from Integrations.Vector_stores.Chroma_connector import ChromaDBConnector
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_community.llms import Ollama
 from langchain_core.output_parsers import StrOutputParser
 
@@ -25,9 +25,10 @@ loader = WebBaseLoader(
 docs = loader.load()
 
 # transform
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+#  set add_start_index=True so that the character index at which each split Document starts
+#  within the initial Document is preserved as metadata attribute “start_index”.
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200, add_start_index=True)
 splits = text_splitter.split_documents(docs)
-splits_json = [spilt.to_json() for spilt in splits]
 
 # embedding
 ollama_embeddings = OllamaEmbeddings(base_url="http://localhost:11434", model="nomic-embed-text")
@@ -39,7 +40,7 @@ ollama_embeddings = OllamaEmbeddings(base_url="http://localhost:11434", model="n
 # vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=ollama_embeddings)
 
 vectorstore = ChromaDBConnector(collection_name="test", embedding=ollama_embeddings)
-# vectorstore.add_documents(splits_json)
+# vectorstore.add_documents(splits)
 
 # Retrieve and generate using the relevant snippets of the blog.
 retriever = vectorstore.search
@@ -52,11 +53,8 @@ def format_docs(docs):
     return "\n\n".join(doc for doc in docs)
 
 
-res = vectorstore.search("What is Task Decomposition?")
-print(format_docs(res))
-
 rag_chain = (
-        {"context": vectorstore.search(RunnablePassthrough()) | format_docs, "question": RunnablePassthrough()}
+        {"context": RunnablePassthrough() | RunnableLambda(retriever) | format_docs, "question": RunnablePassthrough()}
         | prompt
         | llm
         | StrOutputParser()
