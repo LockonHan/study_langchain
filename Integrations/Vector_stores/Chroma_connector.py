@@ -6,7 +6,7 @@ import chromadb as chroma
 
 class ChromaDBConnector:
     def __init__(self, collection_name, embedding):
-        self.persistent_client = chroma.PersistentClient(path="./chroma_db")
+        self.persistent_client = chroma.PersistentClient(path="./chroma_RAG_test")
         self.collection = self.persistent_client.get_or_create_collection(collection_name)
         self.embedding = embedding
 
@@ -21,14 +21,14 @@ class ChromaDBConnector:
         print("添加文档向量完成")
 
     def search(self, query):
-        print(f'query: {query}')
+        # print(f'query: {query}')
         """检索向量数据库"""
         results = self.collection.query(
             query_embeddings=self.get_embeddings([query]),
             n_results=4
         )
-        for para in results['documents'][0]:
-            print(para + "\n")
+        # for para in results['documents'][0]:
+        #     print(para + "\n")
         return results
 
     def get_embeddings(self, docs):
